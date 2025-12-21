@@ -2,6 +2,8 @@
 
 A Jekyll plugin that adds a `jekyll stats` command to display site statistics.
 
+[rubygems.org/gems/jekyll-stats](https://rubygems.org/gems/jekyll-stats)
+
 ## Installation
 
 Add to your Jekyll site's Gemfile:
