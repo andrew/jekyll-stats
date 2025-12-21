@@ -1,0 +1,35 @@
+name: Zizmor
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/**
+  pull_request:
+    paths:
+      - .github/workflows/**
+
+jobs:
+  zizmor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install zizmor
+        run: pipx install zizmor
+
+      - name: Run zizmor
+        run: zizmor --format sarif . > results.sarif
+        continue-on-error: true
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+          category: zizmor
