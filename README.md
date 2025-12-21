@@ -134,6 +134,58 @@ title: Site Statistics
 <p><small>Generated {{ site.data.stats.generated_at | date: "%b %d, %Y" }}</small></p>
 ```
 
+## Automating Stats Updates
+
+You can regenerate stats automatically before each build.
+
+### Rake Task
+
+```ruby
+# Rakefile
+task :build do
+  sh "jekyll stats --save"
+  sh "jekyll build"
+end
+```
+
+### GitHub Actions
+
+```yaml
+# .github/workflows/deploy.yml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+
+      - name: Generate stats
+        run: bundle exec jekyll stats --save
+
+      - name: Commit stats
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add _data/stats.json
+          git diff --staged --quiet || git commit -m "Update site stats"
+          git push
+
+      - name: Build site
+        run: bundle exec jekyll build
+```
+
+### Git Pre-commit Hook
+
+```bash
+#!/bin/sh
+# .git/hooks/pre-commit
+bundle exec jekyll stats --save
+git add _data/stats.json
+```
+
 ## Development
 
 ```bash
