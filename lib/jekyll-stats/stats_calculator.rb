@@ -112,17 +112,21 @@ module JekyllStats
       counts = Hash.new(0)
       posts.each do |post|
         tags = post.data["tags"] || []
-        tags.each { |tag| counts[tag] += 1 }
+        tags.each { |tag| counts[normalize_tag(tag)] += 1 }
       end
       counts.sort_by { |_, count| -count }
             .map { |name, count| { name: name, count: count } }
+    end
+
+    def normalize_tag(tag)
+      tag.to_s.strip.gsub(/[,;:]+\z/, "").strip
     end
 
     def category_counts(posts)
       counts = Hash.new(0)
       posts.each do |post|
         categories = post.data["categories"] || []
-        categories.each { |cat| counts[cat] += 1 }
+        categories.each { |cat| counts[normalize_tag(cat)] += 1 }
       end
       counts.sort_by { |_, count| -count }
             .map { |name, count| { name: name, count: count } }

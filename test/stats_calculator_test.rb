@@ -80,6 +80,18 @@ class StatsCalculatorTest < Minitest::Test
     assert_equal 1, rails_tag[:count]
   end
 
+  def test_normalizes_tags_with_trailing_punctuation
+    create_post("2024-01-15-tagged.md", "Content", "title" => "Tagged", "tags" => ["opensource,", "ruby"])
+    create_post("2024-02-20-tagged2.md", "More content", "title" => "Tagged2", "date" => "2024-02-20", "tags" => ["opensource"])
+    site = fixture_site
+    calculator = JekyllStats::StatsCalculator.new(site)
+    stats = calculator.calculate
+
+    opensource_tag = stats[:tags].find { |t| t[:name] == "opensource" }
+    assert_equal 2, opensource_tag[:count]
+    refute stats[:tags].any? { |t| t[:name] == "opensource," }
+  end
+
   def test_counts_categories
     create_post("2024-01-15-cat.md", "Content", "title" => "Cat Post", "categories" => ["code"])
     site = fixture_site
