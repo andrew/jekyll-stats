@@ -30,6 +30,10 @@ jekyll stats --json
 
 # Include drafts in calculations
 jekyll stats --drafts
+
+# Filter by tags (comma-separated, matches posts with ANY of the tags)
+jekyll stats --tags ruby
+jekyll stats -t ruby,rails
 ```
 
 ### Terminal Output

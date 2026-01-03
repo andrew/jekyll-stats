@@ -174,4 +174,54 @@ class StatsCalculatorTest < Minitest::Test
 
     assert_match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z/, stats[:generated_at])
   end
+
+  def test_filters_posts_by_single_tag
+    create_post("2024-01-15-ruby.md", "Ruby content", "title" => "Ruby Post", "tags" => ["ruby"])
+    create_post("2024-02-20-python.md", "Python content", "title" => "Python Post", "date" => "2024-02-20", "tags" => ["python"])
+    site = fixture_site
+    calculator = JekyllStats::StatsCalculator.new(site, filter_tags: ["ruby"])
+    stats = calculator.calculate
+
+    assert_equal 1, stats[:total_posts]
+    assert_equal "Ruby Post", stats[:longest_post][:title]
+  end
+
+  def test_filters_posts_by_multiple_tags_with_or_logic
+    create_post("2024-01-15-ruby.md", "Ruby content", "title" => "Ruby Post", "tags" => ["ruby"])
+    create_post("2024-02-20-python.md", "Python content", "title" => "Python Post", "date" => "2024-02-20", "tags" => ["python"])
+    create_post("2024-03-01-java.md", "Java content", "title" => "Java Post", "date" => "2024-03-01", "tags" => ["java"])
+    site = fixture_site
+    calculator = JekyllStats::StatsCalculator.new(site, filter_tags: ["ruby", "python"])
+    stats = calculator.calculate
+
+    assert_equal 2, stats[:total_posts]
+  end
+
+  def test_filter_tags_normalizes_input
+    create_post("2024-01-15-ruby.md", "Ruby content", "title" => "Ruby Post", "tags" => ["ruby"])
+    site = fixture_site
+    calculator = JekyllStats::StatsCalculator.new(site, filter_tags: ["ruby,"])
+    stats = calculator.calculate
+
+    assert_equal 1, stats[:total_posts]
+  end
+
+  def test_filter_returns_empty_when_no_posts_match
+    create_post("2024-01-15-ruby.md", "Ruby content", "title" => "Ruby Post", "tags" => ["ruby"])
+    site = fixture_site
+    calculator = JekyllStats::StatsCalculator.new(site, filter_tags: ["python"])
+    stats = calculator.calculate
+
+    assert_equal 0, stats[:total_posts]
+  end
+
+  def test_filter_tags_nil_returns_all_posts
+    create_post("2024-01-15-ruby.md", "Ruby content", "title" => "Ruby Post", "tags" => ["ruby"])
+    create_post("2024-02-20-python.md", "Python content", "title" => "Python Post", "date" => "2024-02-20", "tags" => ["python"])
+    site = fixture_site
+    calculator = JekyllStats::StatsCalculator.new(site, filter_tags: nil)
+    stats = calculator.calculate
+
+    assert_equal 2, stats[:total_posts]
+  end
 end

@@ -13,6 +13,7 @@ module JekyllStats
           c.option "save", "--save", "Save stats to _data/stats.json"
           c.option "json", "--json", "Output raw JSON to stdout"
           c.option "drafts", "-D", "--drafts", "Include drafts in calculations"
+          c.option "tags", "-t", "--tags TAGS", Array, "Filter stats by tags (comma-separated)"
           c.option "config", "--config CONFIG_FILE[,CONFIG_FILE2,...]", Array, "Custom configuration file"
           c.option "source", "-s", "--source SOURCE", "Custom source directory"
           c.option "destination", "-d", "--destination DESTINATION", "Custom destination directory"
@@ -31,7 +32,7 @@ module JekyllStats
         site.reset
         site.read
 
-        calculator = StatsCalculator.new(site, include_drafts: options["drafts"])
+        calculator = StatsCalculator.new(site, include_drafts: options["drafts"], filter_tags: options["tags"])
         stats = calculator.calculate
 
         if options["json"]

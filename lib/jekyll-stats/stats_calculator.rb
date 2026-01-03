@@ -4,11 +4,12 @@ module JekyllStats
   class StatsCalculator
     WORDS_PER_MINUTE = 200
 
-    attr_reader :site, :include_drafts
+    attr_reader :site, :include_drafts, :filter_tags
 
-    def initialize(site, include_drafts: false)
+    def initialize(site, include_drafts: false, filter_tags: nil)
       @site = site
       @include_drafts = include_drafts
+      @filter_tags = normalize_filter_tags(filter_tags)
     end
 
     def calculate
@@ -46,7 +47,21 @@ module JekyllStats
     def collect_posts
       posts = site.posts.docs.dup
       posts += site.drafts if include_drafts && site.respond_to?(:drafts)
+      posts = filter_posts_by_tags(posts) if filter_tags
       posts
+    end
+
+    def filter_posts_by_tags(posts)
+      posts.select do |post|
+        post_tags = (post.data["tags"] || []).map { |t| normalize_tag(t) }
+        (filter_tags & post_tags).any?
+      end
+    end
+
+    def normalize_filter_tags(tags)
+      return nil if tags.nil? || tags.empty?
+
+      tags.map { |t| normalize_tag(t) }
     end
 
     def word_count(post)

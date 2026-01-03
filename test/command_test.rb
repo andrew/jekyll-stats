@@ -56,6 +56,15 @@ class CommandTest < Minitest::Test
     assert_includes option_names, "drafts"
   end
 
+  def test_command_has_tags_option
+    prog = Mercenary::Program.new(:jekyll)
+    JekyllStats::Command.init_with_program(prog)
+
+    stats_command = prog.commands[:stats]
+    option_names = stats_command.options.map { |o| o.config_key }
+    assert_includes option_names, "tags"
+  end
+
   def test_save_creates_data_directory
     options = {
       "source" => fixture_path,
