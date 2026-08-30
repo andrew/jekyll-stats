@@ -84,6 +84,14 @@ The `--save` flag writes `_data/stats.json` with this structure:
   "internal_links": [
     { "url": "/2024/01/foo", "title": "Foo", "inbound_count": 7, "inbound_from": ["/2024/03/bar", "/2024/06/baz"] }
   ],
+  "external_links": {
+    "total": 4637,
+    "unique": 3723,
+    "domains": [
+      { "host": "github.com", "count": 1380, "posts": 172 },
+      { "host": "en.wikipedia.org", "count": 94, "posts": 61 }
+    ]
+  },
   "drafts_count": 3
 }
 ```
@@ -101,6 +109,10 @@ jekyll-stats:
 ```
 
 Excluded posts still appear as targets; they just don't contribute outbound links.
+
+### External links
+
+`external_links` counts outbound `http(s)` links to hosts other than your site's `url:`. `total` is raw link occurrences, `unique` is distinct URLs, and each `domains` entry has `count` (distinct URLs at that host) and `posts` (distinct source posts). A high `count` with a low `posts` means one or two posts account for most links to that host. The same `link_source_exclude_tags` config applies.
 
 ## Building a Stats Page
 

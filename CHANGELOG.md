@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-30
+
+- Add `external_links` to stats: total, unique, and per-domain counts of outbound links
+- Each domain entry includes `posts` (distinct source posts) so single-post link lists are visible
+
 ## [0.3.0] - 2026-08-30
 
 - Add `internal_links` to stats: posts ranked by inbound links from other posts

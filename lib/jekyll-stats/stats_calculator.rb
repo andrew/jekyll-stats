@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "uri"
+
 module JekyllStats
   class StatsCalculator
     WORDS_PER_MINUTE = 200
@@ -41,6 +43,7 @@ module JekyllStats
         tags: tag_counts(posts),
         categories: category_counts(posts),
         internal_links: internal_links(posts),
+        external_links: external_links(posts),
         drafts_count: drafts_count
       }
     end
@@ -180,6 +183,38 @@ module JekyllStats
       }.sort_by { |r| [-r[:inbound_count], r[:url]] }
     end
 
+    def external_links(posts)
+      exclude = Array(site.config.dig("jekyll-stats", "link_source_exclude_tags")).map { |t| normalize_tag(t) }
+      site_host = (URI.parse(site.config["url"].to_s).host rescue nil)
+
+      urls = []
+      posts.each do |post|
+        post_tags = (post.data["tags"] || []).map { |t| normalize_tag(t) }
+        next if exclude.any? && (exclude & post_tags).any?
+
+        post.content.to_s.scan(%r{(?:\]\(|<a\s[^>]*href=["'])(https?://[^"'\s)]+)}i).flatten.each do |href|
+          host = URI.parse(href).host rescue nil
+          next if host.nil?
+          next if site_host && host == site_host
+
+          urls << [href, host, post]
+        end
+      end
+
+      unique = urls.uniq { |u, _, _| u }
+      domains = urls.group_by { |_, h, _| h }
+                    .map { |host, us|
+                      {
+                        host: host,
+                        count: us.map { |u, _, _| u }.uniq.size,
+                        posts: us.map { |_, _, p| p }.uniq.size
+                      }
+                    }
+                    .sort_by { |d| [-d[:count], d[:host]] }
+
+      { total: urls.size, unique: unique.size, domains: domains }
+    end
+
     def normalize_url(url)
       url.sub(/[#?].*\z/, "").sub(%r{/index\.html\z}, "").chomp(".html").chomp("/")
     end
@@ -209,6 +244,7 @@ module JekyllStats
         tags: [],
         categories: [],
         internal_links: [],
+        external_links: { total: 0, unique: 0, domains: [] },
         drafts_count: 0
       }
     end

@@ -128,6 +128,18 @@ class FormatterTest < Minitest::Test
     refute_includes output, "Most Linked Posts:"
   end
 
+  def test_formats_external_links
+    stats = sample_stats.merge(external_links: {
+      total: 1234, unique: 987,
+      domains: [{ host: "github.com", count: 400, posts: 50 }, { host: "example.com", count: 12, posts: 3 }]
+    })
+    formatter = JekyllStats::Formatter.new(stats)
+    output = formatter.to_terminal
+
+    assert_includes output, "External Links: 1,234 (987 unique, 2 hosts)"
+    assert_includes output, "400  github.com (50 posts)"
+  end
+
   def test_formats_large_numbers_with_commas
     stats = sample_stats.merge(total_words: 123456)
     formatter = JekyllStats::Formatter.new(stats)
@@ -154,6 +166,7 @@ class FormatterTest < Minitest::Test
       tags: [{ name: "ruby", count: 5 }, { name: "rails", count: 3 }],
       categories: [{ name: "code", count: 8 }],
       internal_links: [],
+      external_links: { total: 0, unique: 0, domains: [] },
       drafts_count: 0
     }
   end

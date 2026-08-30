@@ -39,6 +39,11 @@ module JekyllStats
         lines << most_linked_posts
       end
 
+      if stats[:external_links][:domains].any?
+        lines << ""
+        lines << top_external_domains
+      end
+
       if stats[:drafts_count].positive?
         lines << ""
         lines << "Drafts: #{stats[:drafts_count]}"
@@ -109,6 +114,15 @@ module JekyllStats
       lines = ["Most Linked Posts:"]
       links.each do |l|
         lines << "  #{l[:inbound_count].to_s.rjust(2)}  #{truncate(l[:title], 50)}"
+      end
+      lines.join("\n")
+    end
+
+    def top_external_domains
+      ext = stats[:external_links]
+      lines = ["External Links: #{format_number(ext[:total])} (#{format_number(ext[:unique])} unique, #{ext[:domains].size} hosts)"]
+      ext[:domains].first(5).each do |d|
+        lines << "  #{d[:count].to_s.rjust(4)}  #{d[:host]} (#{d[:posts]} posts)"
       end
       lines.join("\n")
     end

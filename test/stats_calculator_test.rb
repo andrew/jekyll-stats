@@ -269,6 +269,43 @@ class StatsCalculatorTest < Minitest::Test
     assert_equal ["/2024/02/21/normal.html"], entry[:inbound_from]
   end
 
+  def test_external_links_counts_and_groups_by_host
+    create_post("2024-01-15-a.md", "See [x](https://example.com/one) and [y](https://example.com/two) and [z](https://other.test/a).", "title" => "A")
+    create_post("2024-02-20-b.md", "Again [x](https://example.com/one).", "title" => "B", "date" => "2024-02-20")
+    site = fixture_site
+    stats = JekyllStats::StatsCalculator.new(site).calculate
+
+    ext = stats[:external_links]
+    assert_equal 4, ext[:total]
+    assert_equal 3, ext[:unique]
+    example = ext[:domains].find { |d| d[:host] == "example.com" }
+    assert_equal 2, example[:count]
+    assert_equal 2, example[:posts]
+    other = ext[:domains].find { |d| d[:host] == "other.test" }
+    assert_equal 1, other[:count]
+    assert_equal 1, other[:posts]
+  end
+
+  def test_external_links_ignores_own_site_url
+    create_post("2024-01-15-a.md", "[self](https://mysite.test/foo) and [out](https://elsewhere.test/bar).", "title" => "A")
+    site = fixture_site("url" => "https://mysite.test")
+    stats = JekyllStats::StatsCalculator.new(site).calculate
+
+    ext = stats[:external_links]
+    assert_equal 1, ext[:total]
+    assert_equal ["elsewhere.test"], ext[:domains].map { |d| d[:host] }
+  end
+
+  def test_external_links_respects_source_exclude_tags
+    create_post("2024-01-15-a.md", "[x](https://example.com/one)", "title" => "A", "tags" => ["roundup"])
+    create_post("2024-02-20-b.md", "[y](https://example.com/two)", "title" => "B", "date" => "2024-02-20")
+    site = fixture_site("jekyll-stats" => { "link_source_exclude_tags" => ["roundup"] })
+    stats = JekyllStats::StatsCalculator.new(site).calculate
+
+    assert_equal 1, stats[:external_links][:total]
+    assert_equal 1, stats[:external_links][:domains].first[:count]
+  end
+
   def test_filter_tags_nil_returns_all_posts
     create_post("2024-01-15-ruby.md", "Ruby content", "title" => "Ruby Post", "tags" => ["ruby"])
     create_post("2024-02-20-python.md", "Python content", "title" => "Python Post", "date" => "2024-02-20", "tags" => ["python"])
