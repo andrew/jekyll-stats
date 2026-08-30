@@ -25,6 +25,7 @@ module JekyllStats
       end
 
       def process(options)
+        Jekyll.logger.log_level = :error if options["json"]
         options = configuration_from_options(options)
         site = Jekyll::Site.new(options)
 

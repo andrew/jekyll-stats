@@ -40,6 +40,7 @@ module JekyllStats
         posts_by_day_of_week: posts_by_day_of_week(posts),
         tags: tag_counts(posts),
         categories: category_counts(posts),
+        internal_links: internal_links(posts),
         drafts_count: drafts_count
       }
     end
@@ -147,6 +148,42 @@ module JekyllStats
             .map { |name, count| { name: name, count: count } }
     end
 
+    def internal_links(posts)
+      by_url = posts.each_with_object({}) { |p, h| h[normalize_url(p.url)] = p }
+      exclude = Array(site.config.dig("jekyll-stats", "link_source_exclude_tags")).map { |t| normalize_tag(t) }
+      site_url = site.config["url"].to_s
+
+      inbound = Hash.new { |h, k| h[k] = [] }
+      posts.each do |post|
+        post_tags = (post.data["tags"] || []).map { |t| normalize_tag(t) }
+        next if exclude.any? && (exclude & post_tags).any?
+
+        post.content.to_s.scan(%r{(?:\]\(|<a\s[^>]*href=["'])([^"'\s)]+)}i).flatten.each do |href|
+          href = href.delete_prefix(site_url) unless site_url.empty?
+          next unless href.start_with?("/")
+
+          target = by_url[normalize_url(href)]
+          next unless target
+          next if target == post
+
+          inbound[target] << post
+        end
+      end
+
+      inbound.map { |target, sources|
+        {
+          url: target.url,
+          title: target.data["title"] || "(untitled)",
+          inbound_count: sources.uniq.size,
+          inbound_from: sources.uniq.map(&:url).sort
+        }
+      }.sort_by { |r| [-r[:inbound_count], r[:url]] }
+    end
+
+    def normalize_url(url)
+      url.sub(/[#?].*\z/, "").sub(%r{/index\.html\z}, "").chomp(".html").chomp("/")
+    end
+
     def drafts_count
       return 0 unless site.respond_to?(:drafts) && site.drafts
 
@@ -171,6 +208,7 @@ module JekyllStats
         posts_by_day_of_week: %w[sunday monday tuesday wednesday thursday friday saturday].each_with_object({}) { |d, h| h[d] = 0 },
         tags: [],
         categories: [],
+        internal_links: [],
         drafts_count: 0
       }
     end

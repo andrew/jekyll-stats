@@ -215,6 +215,60 @@ class StatsCalculatorTest < Minitest::Test
     assert_equal 0, stats[:total_posts]
   end
 
+  def test_internal_links_counts_inbound
+    create_post("2024-01-15-target.md", "Target content.", "title" => "Target")
+    create_post("2024-02-20-source.md", "See [target](/2024/01/15/target.html) post.", "title" => "Source", "date" => "2024-02-20")
+    site = fixture_site
+    stats = JekyllStats::StatsCalculator.new(site).calculate
+
+    entry = stats[:internal_links].find { |l| l[:title] == "Target" }
+    assert_equal 1, entry[:inbound_count]
+    assert_equal ["/2024/02/20/source.html"], entry[:inbound_from]
+    refute stats[:internal_links].any? { |l| l[:title] == "Source" }
+  end
+
+  def test_internal_links_normalizes_hrefs
+    create_post("2024-01-15-target.md", "Target content.", "title" => "Target")
+    create_post("2024-02-20-a.md", "[t](/2024/01/15/target)", "title" => "A", "date" => "2024-02-20")
+    create_post("2024-02-21-b.md", "[t](/2024/01/15/target/)", "title" => "B", "date" => "2024-02-21")
+    create_post("2024-02-22-c.md", "[t](https://example.com/2024/01/15/target.html#section)", "title" => "C", "date" => "2024-02-22")
+    site = fixture_site("url" => "https://example.com")
+    stats = JekyllStats::StatsCalculator.new(site).calculate
+
+    entry = stats[:internal_links].find { |l| l[:title] == "Target" }
+    assert_equal 3, entry[:inbound_count]
+  end
+
+  def test_internal_links_ignores_self_and_external
+    create_post("2024-01-15-solo.md", "See [me](/2024/01/15/solo.html) and [ext](https://other.example/foo).", "title" => "Solo")
+    site = fixture_site
+    stats = JekyllStats::StatsCalculator.new(site).calculate
+
+    assert_empty stats[:internal_links]
+  end
+
+  def test_internal_links_counts_unique_sources
+    create_post("2024-01-15-target.md", "Target.", "title" => "Target")
+    create_post("2024-02-20-source.md", "[t](/2024/01/15/target.html) and again [t](/2024/01/15/target.html).", "title" => "Source", "date" => "2024-02-20")
+    site = fixture_site
+    stats = JekyllStats::StatsCalculator.new(site).calculate
+
+    entry = stats[:internal_links].find { |l| l[:title] == "Target" }
+    assert_equal 1, entry[:inbound_count]
+  end
+
+  def test_internal_links_excludes_source_tags_from_config
+    create_post("2024-01-15-target.md", "Target.", "title" => "Target")
+    create_post("2024-02-20-roundup.md", "[t](/2024/01/15/target.html)", "title" => "Roundup", "date" => "2024-02-20", "tags" => ["roundup"])
+    create_post("2024-02-21-normal.md", "[t](/2024/01/15/target.html)", "title" => "Normal", "date" => "2024-02-21")
+    site = fixture_site("jekyll-stats" => { "link_source_exclude_tags" => ["roundup"] })
+    stats = JekyllStats::StatsCalculator.new(site).calculate
+
+    entry = stats[:internal_links].find { |l| l[:title] == "Target" }
+    assert_equal 1, entry[:inbound_count]
+    assert_equal ["/2024/02/21/normal.html"], entry[:inbound_from]
+  end
+
   def test_filter_tags_nil_returns_all_posts
     create_post("2024-01-15-ruby.md", "Ruby content", "title" => "Ruby Post", "tags" => ["ruby"])
     create_post("2024-02-20-python.md", "Python content", "title" => "Python Post", "date" => "2024-02-20", "tags" => ["python"])

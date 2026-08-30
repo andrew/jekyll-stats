@@ -107,6 +107,27 @@ class FormatterTest < Minitest::Test
     assert_includes output, "This is an extremely long post..."
   end
 
+  def test_formats_most_linked_posts
+    stats = sample_stats.merge(internal_links: [
+      { url: "/foo", title: "Foo", inbound_count: 7, inbound_from: [] },
+      { url: "/bar", title: "Bar", inbound_count: 3, inbound_from: [] }
+    ])
+    formatter = JekyllStats::Formatter.new(stats)
+    output = formatter.to_terminal
+
+    assert_includes output, "Most Linked Posts:"
+    assert_includes output, " 7  Foo"
+    assert_includes output, " 3  Bar"
+  end
+
+  def test_hides_most_linked_when_empty
+    stats = sample_stats
+    formatter = JekyllStats::Formatter.new(stats)
+    output = formatter.to_terminal
+
+    refute_includes output, "Most Linked Posts:"
+  end
+
   def test_formats_large_numbers_with_commas
     stats = sample_stats.merge(total_words: 123456)
     formatter = JekyllStats::Formatter.new(stats)
@@ -132,6 +153,7 @@ class FormatterTest < Minitest::Test
       posts_by_day_of_week: { "monday" => 3, "tuesday" => 2 },
       tags: [{ name: "ruby", count: 5 }, { name: "rails", count: 3 }],
       categories: [{ name: "code", count: 8 }],
+      internal_links: [],
       drafts_count: 0
     }
   end

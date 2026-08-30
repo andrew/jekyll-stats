@@ -81,9 +81,26 @@ The `--save` flag writes `_data/stats.json` with this structure:
   "posts_by_day_of_week": { "monday": 23, "tuesday": 18, "wednesday": 15, "thursday": 20, "friday": 22, "saturday": 14, "sunday": 15 },
   "tags": [{ "name": "ruby", "count": 34 }, { "name": "opensource", "count": 28 }],
   "categories": [{ "name": "code", "count": 45 }, { "name": "cars", "count": 32 }],
+  "internal_links": [
+    { "url": "/2024/01/foo", "title": "Foo", "inbound_count": 7, "inbound_from": ["/2024/03/bar", "/2024/06/baz"] }
+  ],
   "drafts_count": 3
 }
 ```
+
+### Internal links
+
+`internal_links` lists posts ranked by how many other posts link to them. It matches markdown and `<a href>` links that point at another post's URL, either as a root-relative path or an absolute URL under your site's `url:`. Self-links and duplicate links from the same source post are ignored.
+
+To stop link-list style posts (year in review, roundups) inflating the counts, exclude them as sources by tag in `_config.yml`:
+
+```yaml
+jekyll-stats:
+  link_source_exclude_tags:
+    - roundup
+```
+
+Excluded posts still appear as targets; they just don't contribute outbound links.
 
 ## Building a Stats Page
 

@@ -34,6 +34,11 @@ module JekyllStats
         lines << categories_line
       end
 
+      if stats[:internal_links].any?
+        lines << ""
+        lines << most_linked_posts
+      end
+
       if stats[:drafts_count].positive?
         lines << ""
         lines << "Drafts: #{stats[:drafts_count]}"
@@ -97,6 +102,15 @@ module JekyllStats
       cats = stats[:categories]
       cat_strs = cats.map { |c| "#{c[:name]} (#{c[:count]})" }
       "Categories:\n  #{cat_strs.join(" | ")}"
+    end
+
+    def most_linked_posts
+      links = stats[:internal_links].first(5)
+      lines = ["Most Linked Posts:"]
+      links.each do |l|
+        lines << "  #{l[:inbound_count].to_s.rjust(2)}  #{truncate(l[:title], 50)}"
+      end
+      lines.join("\n")
     end
 
     def format_number(n)
